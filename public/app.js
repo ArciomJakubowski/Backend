@@ -19,12 +19,12 @@ document.addEventListener("click", (event) => {
     console.log();
 
     const newNote = {
-      title: note === "null" ? event.target.dataset.title : note,
+      title: note,
     };
-
     console.log("newNote", newNote);
-
-    edit(id, newNote);
+    if (note) {
+      edit(id, newNote);
+    }
   }
 });
 
