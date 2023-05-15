@@ -1,44 +1,82 @@
-const yargs = require("yargs");
-const pkg = require("./package.json");
-const { addNote, printNotes, removeNoteById } = require("./notes.controller");
+// const http = require("http");
+const express = require("express");
+const chalk = require("chalk");
+// const fs = require("fs/promises");
+const path = require("path");
+const {
+  addNote,
+  getNotes,
+  removeNoteById,
+  editNote,
+} = require("./notes.controller");
 
-// console.log(__filename);
-// console.log(__dirname);
-// console.log(process.argv[2]);
+const port = 3000;
 
-yargs.version(pkg.version);
+// const basePath = path.join(__dirname, "pages");
 
-yargs.command({
-  command: "add",
-  describe: "add new note to list",
-  builder: {
-    title: {
-      type: "string",
-      describe: "Note title",
-      demandOption: true,
-    },
-  },
-  handler({ title }) {
-    addNote(title);
-    // console.log("Add command:", title);
-  },
-});
-yargs.command({
-  command: "list",
-  describe: "Print all notes",
-  async handler() {
-    const notes = await printNotes();
-    console.log(notes);
-    // console.log("List command");
-  },
-});
+const app = express();
 
-yargs.command({
-  command: "remove",
-  describe: "remove note on the notes list",
-  handler({ id }) {
-    removeNoteById(id);
-  },
+app.set("view engine", "ejs");
+app.set("views", "pages");
+
+app.use(express.static(path.resolve(__dirname, "public")));
+
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
+
+app.use(express.json());
+
+app.get("/", async (request, response) => {
+  //   response.sendFile(path.join(basePath, "index.html"));
+  response.render("index", {
+    title: "Express APP",
+    notes: await getNotes(),
+    created: false,
+  });
 });
 
-yargs.parse();
+app.post("/", async (request, response) => {
+  // console.log(request.body);
+
+  await addNote(request.body.title);
+
+  //   response.sendFile(path.join(basePath, "index.html"));
+
+  response.render("index", {
+    title: "Express APP",
+    notes: await getNotes(),
+    created: true,
+  });
+});
+
+app.delete("/:id", async (request, response) => {
+  // console.log("id", request.params.id);
+
+  removeNoteById(request.params.id);
+
+  response.render("index", {
+    title: "Express APP",
+    notes: await getNotes(),
+    created: false,
+  });
+});
+
+app.put("/:id/:edit", async (request, response) => {
+  // console.log("1:", request.params.id);
+  // console.log("2:", request.body);
+  // console.log(request);
+  await editNote(request.params.id, request.body.title);
+
+  response.render("index", {
+    title: "Express APP",
+    notes: await getNotes(),
+    created: false,
+  });
+});
+
+app.listen(port, () => {
+  console.log(chalk.green(`Server has been started on port ${port}...`));
+});
